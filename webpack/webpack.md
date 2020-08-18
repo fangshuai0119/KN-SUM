@@ -556,11 +556,35 @@ npm i -D extract-text-webpack-plugin
 
 Webpack是通过`plugins`属性来配置需要使用的插件列表的。`plugins`属性是一个数组，里面的每一项都是插件的一个实例，在实例化一个组件时可以通过构造函数传入这个组件支持的配置属性。
 
+### 1-6使用 DevServer
 
+前面的几节只是让Webpack正常运行起来，但在实际开发中你可能会需要：
 
+1. 提供HTTP服务而不是使用本地文件预览
+2. 监听文件的变化并自动刷新网页，做到实时预览
+3. 支持SourceMap，以方便调试
 
+对于这些，官方提供的开发工具DevServer 可以很方便的做到，DevServer会启动一个Http服务器用于服务网页请求，同时会启动Webpack, 并接收Webpack发出的文件变更信号，通过WebSocket 协议自动刷新网页做到实时预览
 
+为之前的项目安装WebpackDevServer
 
+```shell
+npm i -D webpack-dev-server
+```
+
+安装成功后执行`webpack-dev-server`命令，DevServer 就启动了，DevServer 启动后会一直驻留在后台保持运行，但是这时用浏览器访问地址，会报404找不到./dist/bundle.js的错误，原因是DevServer 会把Webpack构建出的文件保存在内存中，在要访问输出的文件时，必须通过HTTP服务访问。由于DevServer 不会理会webpack.config.js里配置的output.path属性，所以要获取bundle.js 的正确URL是http://localhost:8080/bundle.js，对应的index.html 同时需要进行修改。
+
+**实时预览**
+
+webpack在启动时可以开启监听模式，开启监听模式后webpack会监听本地文件系统的变化，发生变化时重新构建出新的结果。webpack默认是关闭监听模式的，你可以在启动webpack时通过`webpack --watch`来开启监听模式。
+
+通过DevServer 启动的webpack会开启监听模式，当发生变化时重新执行完构建后通知DevServer。DevServer 会让webpack 在构建出的JavaScript代码里注入一个代理客户端用于控制网页，网页和DevServer之间通过websocket 协议通信，以方便DevServer主动向客户端发送命令。DevServer 在收到来自webpack的文件变化通知时通过注入的客户端控制见面刷新。
+
+>**注：**如果尝试修改index.html文件并保存，不会触发上述的机制，导致这个问题的原因是webpack在启动时会以配置里的entry为入口去递归解析出entry所依赖的文件，只有entry本身和依赖的文件才会被webpack添加到监听列表里，而index.html 文件是脱离了JavaScript模块化系统的，所以webpack不知道它的存在。
+
+**模块热替换**
+
+除了通过重新刷新整个网页来实现实时预览，DevServer 还有一种被称为模块热替换的刷新技术。模块热替换能做到在不重新加载整个网页的情况下，通过将被更新过的模块替换老的模块，再重新执行一次来实现实时预览。模块热替换相对于默认的刷新机制能提供更快的响应和更好的开发体验。模块热替换默认是关闭的，要开启模块热替换，只需要在启动DevServer时带上`--hot`参数，重启DevServer 后再去更新文件就能体验到模块热替换了。
 
 
 
