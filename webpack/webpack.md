@@ -406,7 +406,7 @@ npm i -D webpack@beta
   "scripts": {
     "start": "webpack --config webpack.config.js"
   }
-    ```
+  ```
 
 **安装Webpack到全局**
 
@@ -586,121 +586,676 @@ webpack在启动时可以开启监听模式，开启监听模式后webpack会监
 
 除了通过重新刷新整个网页来实现实时预览，DevServer 还有一种被称为模块热替换的刷新技术。模块热替换能做到在不重新加载整个网页的情况下，通过将被更新过的模块替换老的模块，再重新执行一次来实现实时预览。模块热替换相对于默认的刷新机制能提供更快的响应和更好的开发体验。模块热替换默认是关闭的，要开启模块热替换，只需要在启动DevServer时带上`--hot`参数，重启DevServer 后再去更新文件就能体验到模块热替换了。
 
+**支持SourceMap**
 
+在浏览器中运行的JavaScript 代码都是编译器输出的代码，这些代码可读性差。如果需要在开发过程中进行断点调试，可以通过Source Map映射代码，让你在源代码上断点调试。webpack支持生成Source Map，在启动命令上带上`--devtool source-map`参数。加上重启DevServer后刷新页面，再打开Chrome 浏览器的开发者工具，就可在Sources栏中看到可调试的源代码了。
 
+```shell
+npx webpack-dev-server --devtool source-map
+```
 
 
 
+![image-20200819204934023](webpack.assets/image-20200819204934023.png)
 
 
 
+### 1-7核心概念
 
+- **Entry**：入口，webpack执行构建的第一步将从Entry 开始，可抽象成输入。
+- **Module**: 模块，在webpack里一切皆模块，一个模块对应着一个文件。webpack会从配置的Entry开始递归找出所有依赖的模块。
+- **Chunk**: 代码块，一个Chunk由多个模块组合而成，用于代码合并与分割。
+- **Loader**: 模块转换器，用于把模块原内容按照需求转换成新内容。
+- **Plugin**: 扩展插件，在webpack构建流程中的特定时机注入扩展逻辑来改变构建结果或做你想要的事情。
+- **Output**: 输出结果，在webpack经过一系列处理并得出最终想要的代码后输出结果。
 
+Webpack启动后会从Entry里配置的Module 开始递归解析Entry 依赖的所有Module。每找到一个Module，就会根据配置的Loader 去找出对应的转换规则，对Module进行转换后，再解析出当前Module 依赖的Module。这些模块会以Entry 为单位进行分组，一个Entry和其所有依赖的Module 被分到一个组也就是一个Chunk。最后webpack会把所有Chunk转换成文件输出。在整个流程中webpack会在恰当的时机执行Plugin里定义的逻辑。
 
+## 二、配置
 
+> 配置webpack的方式有两种：
+>
+> 1. 通过一个JavaScript 文件描述配置，例如使用webpack.config.js文件里的配置
+> 2. 执行webpack可执行文件时通过命令行参数传入，例如webpack --devtool source-map
+>
+> 这两种方式可以相互搭配，例如执行webpack时通过命令`webpack --config webpack-dev.config.js`指定配置文件，再去`webpack-dev.config.js`文件里描述部分配置。
 
+### 2-1 Entry
 
+> `entry`是配置模块的入口，可抽象成输入，webpack执行构建的第一步将从入口开始搜寻及递归解析出所有入口依赖的模块。
+>
+> `entry`配置是***必填***的，若不填写则将导致webpack报错退出
 
+**context**
 
+webpack在寻找相对路径的文件时会以`context`为根目录，`context`默认为执行启动webpack时所有的当前工作目录。如果想改变`context`的默认位置，则可以在配置文件里进行设置
 
+```javascript
+module.exports = {
+  context: path.resolve(__dirname, 'app')
+}
+```
 
+> **注意：** `context`必须是一个绝对路径的字符串。除此之外，还可以在启动webpack时带上参数`webpack --context`来设置`context`
 
+**Entry 类型**
 
+Entry 类型可以是以下三种中的一种或者相互组合
 
+| 类型   | 例子                                                         | 含义                                 |
+| ------ | ------------------------------------------------------------ | ------------------------------------ |
+| string | `'./app/entry'`                                              | 入口模块的文件路径，可以是相对路径。 |
+| array  | `['./app/entry1', './app/entry2']`                           | 入口模块的文件路径，可以是相对路径。 |
+| object | `{a: './app/entry-a', b: ['./app/entry-b1', './app/entry-b2']}` | 配置多个入口，每个入口生成一个Chunk  |
 
+如果是`array`类型，则搭配`output.library`配置项使用时，只有数组里的最后一个入口文件的模块会被导出
 
+**Chunk 名称**
 
+webpack 会为每个生成的Chunk取一个名称，Chunk的名称和Entry 的配置有关：
 
+- 如果entry 是一个string 或 array，就只会生成一个chunk，这时chunk 的名称是`main`
+- 如果entry 是一个object，就可能会出现多个chunk，这时chunk 的名称是object 键值对里键的名称。
 
+**配置动态Entry**
 
+假如项目里有多个页面需要为每个页面的入口配置一个Entry，但这些页面的数量可能会不断增长，则这时Entry的配置会受到其他因素影响导致不能写成静态的值。其解决方法是把Entry 设置成一个函数去动态返回上面所叙述的值，代码如下：
 
+```javascript
+// 同步函数
+entry: () => {
+  return {
+    a: './pages/a',
+    b: './pages/b'
+  }
+};
+// 异步函数
+entry: () => {
+  return new Promise((resolve) => {
+    resolve({
+      a: './pages/a',
+    	b: './pages/b'
+    });
+  })
+}
+```
 
+### 2-2 Output
 
+`output`配置如何输出最终想要的代码。output是一个object 里面包含一系列配置项
 
+**filename**
 
+`output.filename`配置输出文件的名称，为string类型，如果只有一个输出文件，则可以把它写成静态不变的
 
+```javascript
+filename: 'bundle.js'
+```
 
+但是在多个chunk 要输出时，需要借助模板和变量。webpack会为每个chunk 取一个名称，可以根据chunk的名称来区分输出的文件名
 
+```javascript
+filename: '[name].js'
+```
 
+代码里的`[name]`代表用内置的name 变量去替换[name]，这时你可以把它看作一个字符串模块函数，每个要输出的chunk都会通过这个函数去拼接出输出的文件名称
 
+内置变量
 
+| 变量名    | 含义                      |
+| --------- | ------------------------- |
+| id        | chunk 的唯一标识，从0开始 |
+| name      | chunk的名称               |
+| hash      | chunk 的唯一标识的hash值  |
+| chunkhash | chunk内容的hash值         |
 
+其中`hash`和`chunkhash`的长度是可指定的，`[hash:8]`代表取8位Hash值，默认是20位。
 
+**chunkFilename**
 
+`output.chunkFilename`配置无入口的chunk在输出时的文件名称，chunkFilename和上面的filename 非常类似，但chunkFilename只用于指定在运行过程中生成的Chunk在输出时的文件名称。常见的会在运行时生成Chunk场景有在使用CommonChunkPlugin、使用`import('path/to/module')`
 
+**path**
 
+`output.path`配置输出文件存放在本地的目录，必须是string类型的绝对路径。通过通过Node.js的`path`模块去获取绝对路径
 
+```javascript
+path: path.resolve(__dirname, 'dist_[hash]')
+```
 
+**publicPath**
 
+在复杂的项目里可能会有一些构建出的资源需要异步加载，加载这些异步资源需要对应的URL地址。
 
+`output.publicPath`配置发布到线上资源的URL前缀，为string类型。默认值是空字符串`''`，即相对路径
 
+```javascript
+filename: '[name]_[chunkhash:8].js',
+publicPath: 'https://cdn.example.com/assets/'
+```
 
+这时发布到线上的HTML在引入JavaScript文件时就需要
 
+```html
+<script src="https://cdn.example.com/assets/a_12345678.js"></script>
+```
 
+使用该配置项时要小心，可能会导致`404`错误
 
+`output.path`和`output.publicPath`都支持字符串模板，内置变量只有一个`hash`代表一次编译操作的Hash值
 
+**crossOriginLoading**
 
+webpack输出的部分代码块可能需要异步加载，而异步加载是通过JSONP方式实现的。JSONP的原理是动态地向HTML中插入一个`<script src="url"></script>`标签去加载异步资源。
 
+`output.crossOriginLoading`则是用于配置这个异步插入的标签的`crossorigin`值
 
+script标签的crossorigin属性可以取以下值
 
+- `anonymous`(默认)在加载此脚本资源时不会带上用户的Cookies;
+- `use-credentials`在加载此脚本资源时会带上用户的Cookies
 
+通常用设置crossorigin 来获取异步加载的脚本执行时的详细错误信息。
 
+**libraryTarget和library**
 
+当用webpack去构建一个可以被其他模块导入使用(给别人)的库时需要用到它们。
 
+- output.libraryTarget配置以何种方式导出库
+- output.library 配置导出库的名称
 
+它们通常搭配在一起使用
 
+output.libraryTarget 是字符串的枚举类型
 
+| 枚举值     |
+| ---------- |
+| var (默认) |
+| commonjs   |
+| commonjs2  |
+| this       |
+| window     |
+| global     |
 
+**libraryExport**
 
+`output.libraryExport`配置要导出的模块中哪些子模块需要被导出。它只有在`output.libraryTarget`被设置成`commonjs`或者`commonjs2`时才有意义
 
+### 2-3 Module
 
+>`module`配置如何处理模块
 
+**配置Loader**
 
+`rules`配置模块的读取和解析规则，通常用来配置Loader。其类型是一个数组，数组里每一项都描述了如何去处理部分文件。可通过以下方式进行配置
 
+- 条件匹配：通过`test`、`include` 、`exclude`三个配置项来命中Loader要应用规则的文件
+- 应用规则：对选中后的文件通过`use`配置项来应用Loader ，可以只应用一个Loader 或者按照从后往前的顺序应用一组Loader，同时还可以分别给Loader传入参数
+- 重置顺序：一组Loader的执行顺序默认是从右到左执行，通过`enforce`选项可以让其中一个Loader的执行顺序放到最前或最后
 
+```javascript
+module: {
+  rules: [
+    {
+      // 命中JavaScript文件 
+      test: /\.js$/,
+      // 用babel-loader 转换JavaScript 文件
+      // ?cacheDirectory表示传给babel-loader的参数，用于缓存babel 编译结果加快重新编译速度
+      use: ['babel-loader?cacheDirectory'],
+      // 只命中src目录里的js文件，加快webpack搜索速度
+      include: path.resolve(__dirname, 'src')
+    },
+    {
+      // 命中SCSS文件 
+      test: /\.scss$/,
+      // 使用一组Loader 去处理SCSS文件 
+      // 处理顺序为从后到前
+      use: ['style-loader', 'css-loader', 'sass-loader'],
+      // 排除node_modules 目录下的文件
+      exclude: path.resolve(__dirname, 'node_modules')
+    },
+    {
+      // 对非文本文件采用file-loader 加载
+      test: /\.(gif|png|jpe?g|eot|woff|ttf|svg|pdf)$/,
+      use: ['file-loader']
+    }
+  ]
+}
+```
 
+在Loader 需要传入很多参数时，你还可以通过一个Object 来描述
 
+```javascript
+use: [
+  {
+    loader: 'babel-loader',
+    options: {
+      cacheDirectory: true
+    },
+    // enforce: 'post'是把Loader 的执行顺序放到最后
+    // enforce: 'pre'是把Loader 的执行顺序放到最前面
+    enforce: 'post'
+  },
+  // 省略其他Loader
+]
+```
 
+`test`、`include`、`exclude`这三个命中文件的配置项还都支持数组类型
 
+```javascript
+{
+  test: [
+    /\.jsx?$/,
+    /\.tsx?$/
+  ],
+  include: [
+    path.resolve(__dirname, 'src'),
+    path.resolve(__dirname, 'tests')
+  ],
+  exclude: [
+    path.resolve(__dirname, 'node_modules'),
+    path.resolve(__dirname, 'bower_modules')
+  ]
+}
+```
 
+数组里的每项之间是或的关系，即文件路径符合数组中的任何一个条件就会被命中。
 
+**noParse**
 
+`noParse`配置项可以让webpack忽略对部分没采用模块化的文件的递归解析和处理，这样做的好处是能提高构建性能。比如jQuery、ChartJS它们庞大又没有采用模块化标准，让webpack去解析这些文件耗时又没有意义。
 
+`noParser`是可选配置项，类型需要是`RegExp`、`[RegExp]`、`function`其中一个
 
+```javascript
+// 使用正则表达式
+noParse: /jquery|chartjs/
 
+// 使用函数，从webpack 3.0.0开始支持
+noParse: (content) => {
+  // content 代表一个模块的文件路径
+  // 返回true or false
+  return /jquery|chartjs/.test(content)
+}
+```
 
+> 被忽略的文件里不应该包含`import`、`require`、`define`等模块化语句
 
+**parser**
 
+因为webpack是以模块化为JavaScript文件为入口，所以内置了对模块化JavaScript的解析功能，支持AMD、CommonJS、SystemJS、ES6。`parser`属性可以更细粒度的配置哪些模块语法要解析哪些不解析，和`noParse`配置项的区别在于`parser`可以精确到语法层面，而`noParse`只能控制哪些文件不被解析
 
+```javascript
+module: {
+  rules: [
+    {
+      test: /\.js$/,
+      use: ['babel-loader'],
+      parser: {
+        amd: false, // 禁用AMD
+        commonjs: false, // 禁用CommonJS
+        system: false, // 禁用SystemJS
+        harmony: false, // 禁用ES6 import/export
+        requireInclude: false, // 禁用require.include
+        requireEnsure: false, // 禁用require.ensure
+        requireContext: false, // 禁用require.context
+        browserify: false, // 禁用browserify
+        requireJs: false, // 禁用requirejs
+      }
+    }
+  ]
+}
+```
 
+### 2-4 Resolve
 
+> webpack 在启动后会从配置的入口模块出发找出所有依赖的模块，Resolve配置webpack如何寻找模块所对应的文件。webpack内置JavaScript模块化语法解析功能，默认会采用模块化标准里约定好的规则去寻找，但你也可以根据自己的需要修改默认的规则。
 
+**alias**
 
+`resolve.alias`配置项通过别名来把原导入路径映射成一个新的导入路径
 
+```javascript
+// webpack alias 配置
+resolve: {
+  alias: {
+    components: './src/components/'
+  }
+}
+```
 
+当你通过`import Button from 'components/button'`导入时，实际上被`alias`等价替换成了`import Button from './src/components/button'`
 
+以上alias 配置的含义是把导入语句里的components关键字替换成./src/components/
 
+alias 还支持`$`符号来缩小范围到只命中以关键字结尾的导入语句：
 
+```javascript
+resolve: {
+  alias: {
+    'react$': '/path/to/react.min.js'
+  }
+}
+```
 
+`react$`只会命中以`react`结尾的导入语句，只会把`import 'react'`关键字替换成`import '/path/to/react.min.js'`
 
+**mainFields**
 
+有一些第三方模块会针对不同环境提供几份代码。例如分别提供采用ES5和ES6的2份代码，这2份代码的位置写在`package.json`文件中
 
+```json
+{
+  // 采用ES6语法的代码入口文件
+  "jsnext:main": "es/index.js",
+  // 采用ES5 语法的代码入口文件
+  "main": "lib/index.js"
+}
+```
 
+webpack 会根据`mainFields`的配置去决定优先采用哪份代码
 
+```javascript
+mainFields: ['browser', 'main']
+```
 
+webpack 会按数组里的顺序去`package.json`文件里查找，只会使用找到的第一个。
 
+假如你想优先采用ES6的那份代码，可以这样配置
 
+```javascript
+mainFields: ['jsnext:main', 'browser', 'main']
+```
 
+**extensions**
 
+在导入语句没带文件后缀时，webpack会自动带上后缀去尝试访问文件是否存在。`resolve.extensions`用于配置在尝试过程中用到的后缀列表，默认如下
 
+```javascript
+extensions: ['.js', '.json']
+```
 
+即当遇到`require('./data')`这样的导入语句时，webpack先去寻找`./data.js`文件，如果该文件不存在就去寻找`./data.json`文件，如果还是找不到就报错。
 
+假如想让webpack优先使用目录下的TypeScript文件，可以这样配置
 
+```javascript
+extensions: ['.ts', '.js', '.json']
+```
 
+**modules**
 
+`resolve.modules`配置webpack去哪些目录下寻找第三方模块，默认只会去`node_modules`目录下寻找。有时你的项目里会有一些模块会大量被其它模块依赖和导入，由于其它模块的位置分布不定，针对不同的文件都要去计算被导入模块文件的相对路径，这个路径有时候会很长，就像这样`import '../../../components/button'`这时你可以利用modules 配置项优化，假如那些被大量导入的模块都在./src/components 目录下，把`modules`进行配置
 
+```javascript
+modules: ['./src/components', 'node_modules']
+```
 
+之后再进行调用，可以通过`import 'button'`导入
 
+**descriptionFiles**
 
-- fyi
+`resolve.descritpionFiles`配置描述第三方模块的文件名称，也就是`package.json`文件，默认如下
+
+```javascript
+descriptionFiles: ['package.json']
+```
+
+**enforceExtension**
+
+`resolve.enforceExtension`如果配置为true所有导入语句都必须带文件后缀，例如开启前`import './foo'`能正常工作，开启后必须写成`import './foo.js'`
+
+**enforceModuleExtension**
+
+与`enforceExtension`作用类似，但是其只对`node_modules`下的模块生效，通常搭配`enforceExtension`使用，当`enforceExtension`为true时，因为安装的第三方模块中大多数导入语句没带文件后缀，所以这时通过配置`enforceModuleExtension`为false来兼容第三方模块。
+
+### 2-5 Plugin
+
+>  Plugin 用于扩展webpack功能，各种各样的Plugin几乎让webpack可以做任何构建相关的事情。
+
+**配置Plugin**
+
+Plugin 的配置很简单，`plugins`配置项接受一个数组，数组里每一项都是一个要使用的Plugin的实例，Plugin需要的参数通过构造函数传入。
+
+```javascript
+const CommonsChunkPlugin = require('webpack/lib/optimize/CommonChunkPlugin');
+
+module.exports = {
+  plugins: [
+    // 所有页面都会用到的公共代码提取到common代码块中
+    new CommonsChunkPlugin({
+      name: 'common',
+      chunks: ['a', 'b']
+    })
+  ]
+}
+```
+
+使用Plugin 的难点在于掌握Plugin本身提供的配置项，而不是如何在Webpack中接入Plugin。
+
+### 2-6 devServer
+
+> 除了在配置文件里通过`devServer`传入参数外，还可以通过命令行参数传入。注意只有在通过DevServer去启动webpack时配置文件里devServer 才会生效，因为这些参数所对应的功能都是DevServer提供的，webpack本身并不认识devServer 配置项。
+
+**hot**
+
+`devServer.hot`配置是否启用模块热替换功能。DevServer 默认的行为是在发现源代码被更新后会通过自动刷新整个页面来做到实时预览，开启模块热替换功能后将在不刷新整个页面的情况下通过用新模块替换老模块来做到实时预览。
+
+**inline**
+
+DevServer 的实时预览功能依赖一个注入到页面里的代理客户端去接受来自DevServer的命令和负责刷新网页的工作。`devServer.inline`用于配置是否自动注入这个代理客户端到将运行在页面里的Chunk里去，默认是会自动注入。DevServer会根据你是否开启`inline`来调整它的自动刷新策略：
+
+- 如果开启`inline`，DevServer 会在构建完变化后的代码时通过代理客户端控制网页刷新 
+- 如果关闭`inline`，DevServer 将无法直接控制要开发的网页。这时它会通过iframe 的方式去运行要开发的网页，当构建完变化后的代码时通过刷新iframe 来实现实时预览。这时你需要去`http://locahost:8080/webpack-dev-server`实时预览你的网页
+
+建议默认开启就可以
+
+**historyApiFallback**
+
+`devServer.historyApiFallback`用于方便的开发使用了HTML5 History API的单页应用。这类单页应用要求服务器在针对任何命中路由时都返回一个对应的HTML文件，这类单页应用要求服务器在针对任何命中的路由时都返回一个对应的HTML文件，例如在访问`http://localhost/user` 和 `http://localhost/home` 时都返回 `index.html` 文件， 浏览器端的 JavaScript 代码会从 URL 里解析出当前页面的状态，显示出对应的界面。
+
+配置 `historyApiFallback` 最简单的做法是：
+
+```js
+historyApiFallback: true
+```
+
+这会导致任何请求都会返回 `index.html` 文件，这只能用于只有一个 HTML 文件的应用。
+
+如果你的应用由多个单页应用组成，这就需要 DevServer 根据不同的请求来返回不同的 HTML 文件，配置如下：
+
+```js
+historyApiFallback: {
+  // 使用正则匹配命中路由
+  rewrites: [
+    // /user 开头的都返回 user.html
+    { from: /^\/user/, to: '/user.html' },
+    { from: /^\/game/, to: '/game.html' },
+    // 其它的都返回 index.html
+    { from: /./, to: '/index.html' },
+  ]
+}
+```
+
+**contentBase**
+
+`devServer.contentBase`配置DevServer Http 服务器的文件根目录。默认情况下为当前执行目录，通常是项目根目录，一般情况下不必进行设置，除非你有额外的文件需要被DevServer服务。例如你想把项目根目录下的`public`目录设置成DevServer服务器的文件根目录
+
+```javascript
+devServer: {
+  contentBase: path.join(__dirname, 'public')
+}
+```
+
+DevServer 服务器通过HTTP服务暴露出的文件分为两类
+
+- 暴露本地文件
+- 暴露webpack构建出的结果，由于构建出的结果交给了DevServer，所以你在使用了DevServer时在本地找不到构建出的文件
+
+`contentBase`只c有用来配置暴露本地文件的规则，你可以通过`contentBase:false`来关闭暴露本地文件
+
+**headers**
+
+`devServer.headers`配置项可以在HTTP响应中注入一些HTTP响应头
+
+```javascript
+devServer: {
+  headers: {
+    'X-foo': 'bar'
+  }
+}
+```
+
+**host**
+
+`devServer.host`配置项用于配置DevServer服务监听的地址。默认为`127.0.0.1`只能本地可以访问DevServer的HTTP服务，如果你想要局域网中的其它设备访问你本地服务，可以在启动DevServer 时带上 `--host 0.0.0.`
+
+**port**
+
+`devServer.port`配置项用于配置DevServer服务监听的端口，默认使用8080。如果被占用就继续向上加1
+
+**allowedHosts**
+
+`devServer.allowedHosts`配置一个白名单列表，只有HTTP请求的HOST在列表里才正常返回
+
+```javascript
+allowedHosts: [
+  // 匹配单个域名
+  'host.com',
+  'sub.host.com',
+  // host2.com 和所有的子域名 *.host2.com 都将匹配
+  '.host2.com'
+]
+```
+
+**disableHostCheck**
+
+`devServer.disableHostCheck`配置项用于配置是否关闭用于DNS重绑定的HTTP请求的HOST检查。DevServer默认只接受来自本地请求，关闭后可以接受来自任何HOST的请求。它通常用于搭配`--host 0.0.0.0`使用
+
+**https**
+
+DevServer 默认使用HTTP协议服务，它也能通过 HTTPS 协议服务。 有些情况下你必须使用 HTTPS，例如 HTTP2 和 Service Worker 就必须运行在 HTTPS 之上。 要切换成 HTTPS 服务，最简单的方式是：
+
+```js
+devServer:{
+  https: true
+}
+```
+
+DevServer 会自动的为你生成一份 HTTPS 证书。
+
+如果你想用自己的证书可以这样配置：
+
+```js
+devServer:{
+  https: {
+    key: fs.readFileSync('path/to/server.key'),
+    cert: fs.readFileSync('path/to/server.crt'),
+    ca: fs.readFileSync('path/to/ca.pem')
+  }
+}
+```
+
+**clientLogLevel**
+
+`devServer.clientLogLevel`配置在客户端的日志等级，这会影响到你在浏览器开发者工具控制台里看到的日志内容。`clientLogLevel` 是枚举类型，可取如下之一的值 `none | error | warning | info`。 默认为 `info` 级别，即输出所有类型的日志，设置成 `none` 可以不输出任何日志。
+
+**compress**
+
+`devServer.compress`配置是否启用gzip压缩，`boolean`为类型，默认为`false`
+
+**open**
+
+`devServer.open` 用于在DevServer 启动且第一次构建完时自动用你系统上的默认的浏览器去打开要开发的网页。同时还提供`devServer.openPage`配置项我用于打开指定URL的网页。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
