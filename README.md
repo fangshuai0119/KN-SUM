@@ -11,7 +11,8 @@
 - [ ] MyBatis
 - [ ] Python
 - [ ] 分布式事务
-- [ ] html&css
+- [x] html
+- [ ] css
 - [ ] css3
 - [ ] Vue
 - [ ] React
