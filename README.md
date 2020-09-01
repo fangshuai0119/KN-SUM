@@ -12,7 +12,7 @@
 - [ ] Python
 - [ ] 分布式事务
 - [x] html
-- [ ] css
+- [x] css
 - [ ] css3
 - [ ] Vue
 - [ ] React
