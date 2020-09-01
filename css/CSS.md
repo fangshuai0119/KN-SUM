@@ -1216,19 +1216,242 @@ diaplay 是显示模式，可以改变显示模式有以下方式
 2. `top` 和 `bottom` 不要同时使用；
 3. `left` 和 `right` 不要同时使用。
 
+## 七、CSS高级技巧
 
+### 7.1 元素的显示与隐藏
 
+- 目的： 让一个元素在页面中消失或者显示出来
+- 场景： 类似网站广告，当我们点击关闭就不见了，但是我们重新刷新页面，会重新出现
 
+#### 7.1.1. display 显示
 
+- display 设置或检索对象是否及如何显示
 
+```css
+display: none 隐藏对象
 
+display：block 除了转换为块级元素之外，同时还有显示元素的意思。
+```
 
+- 特点：隐藏之后，不再保留位置
 
+![29none](CSS.assets/29none.png)
 
+>实际开发场景：
+>
+>配合后面js做特效，比如下拉菜单，原先没有，鼠标经过，显示下拉菜单，应用极为广泛
 
+#### 7.1.2 visibility 可见性
 
+- 设置或检索是否显示对象
 
-## 七、一般的骚操作
+```css
+visibility：visible ; 　对象可视
+
+visibility：hidden; 　  对象隐藏
+```
+
+- 特点：隐藏之后，继续保留原有位置
+
+![30visibility](CSS.assets/30visibility.png)
+
+#### 7.1.3 overflow 溢出
+
+- 检索或设置当对象的内容超过其指定高度及宽度时如何管理内容
+
+| 属性值  | 描述                                       |
+| ------- | ------------------------------------------ |
+| visible | 不剪切内容也不添加滚动条                   |
+| hidden  | 不显示超过对象尺寸的内容，超出的部分隐藏掉 |
+| scroll  | 不管超出内容否，总是显示滚动条             |
+| auto    | 超出自动显示滚动条，不超出不显示滚动条     |
+
+![33overflow](CSS.assets/33overflow.png)
+
+实际开发场景：
+
+1. 清除浮动
+2. 隐藏超出内容，隐藏掉，不允许内容超过盒子
+
+### 7.2 CSS用户界面样式
+
+- 所谓的界面样式，就是更改一些用户操作样式，以便更好的提高用户体验
+  - 更改用户的鼠标样式
+  - 表单轮廓
+  - 防止表单域拖拽
+
+#### 7.2.1 鼠标样式cursor
+
+设置或检索在对象上移动的鼠标指针采用何种系统预定义的光标形状
+
+| 属性值      | 描述      |
+| ----------- | --------- |
+| default     | 小白 默认 |
+| pointer     | 小手      |
+| move        | 移动      |
+| text        | 文本      |
+| not-allowed | 禁止      |
+
+#### 7.2.2 轮廓线outline
+
+![outline](CSS.assets/outline.png)
+
+是绘制于元素周围的一条线，位于边缘的外围，可起到突出元素的作用
+
+```css
+outline : outline-color ||outline-style || outline-width 
+```
+
+#### 7.2.3 防止拖拽文本域resize
+
+![34textarea](CSS.assets/34textarea.png)
+
+实际开发中，我们文本域右下角是不可以拖拽
+
+```css
+<textarea style="resize: none;"></textarea>
+```
+
+### 7.3 vertical-align 垂直对齐
+
+- 有宽度的块级元素居中对齐，是margin: 0 auto
+- 让文字居中对齐，是text-align: center
+
+但是我们从来没有看过垂直居中的属性
+
+vertical-align 垂直对齐，它只针对于行内元素或行内块元素
+
+![xian](CSS.assets/xian.jpg)
+
+```css
+vertical-align: baseline | top | middle | bottom
+```
+
+设置或检索对象内容的垂直对齐方式
+
+**注意**
+
+- vertical-align 不影响块级元素中的内容对齐，它只针对于行内元素或行内块元素
+- 特别是行内块元素，通常用来控制图片/表单与文字的对齐
+
+#### 7.3.1 图片、表单和文字对齐
+
+我们可以通过vertical-align 控制图片和文字的垂直关系，默认的图片会和文字基线对齐
+
+![基线对齐](CSS.assets/基线对齐.jpg)
+
+![1498467742995](CSS.assets/1498467742995.png)
+
+#### 7.3.2 去除图片底侧空白缝隙
+
+![35vertical](CSS.assets/35vertical.png)
+
+- 原因：
+
+  图片或者表单等行内块元素，它的底线会和父级盒子的基线对齐，就会在图片底侧产生一个空白缝隙
+
+- 解决：
+
+  - 给img vertical-align : middle | top | bottom 等等。让图片不要和基线对齐
+
+  ![1633](CSS.assets/1633.png)
+
+  - 给img 添加display: block；转换为块级元素就不会存在问题了
+
+  ![sina1](CSS.assets/sina1.png)
+
+### 7.4 溢出的文字省略号显示
+
+#### 7.4.1 white-space
+
+white-space 设置或检索对象内文本显示方式。通常我们使用于强制一行显示内容
+
+```css
+white-space: normal; 默认处理方式
+
+white-space: nowrap; 强制在同一行内显示所有文字，直接文本结束或者遭遇br标签对象才换行
+```
+
+#### 7.4.2 text-overflow 文字溢出
+
+设置或检索是否使用一个省略标记(...)标示对象内文本的溢出
+
+```css
+text-overflow: clip; 不显示省略标记（...），而是简单的裁切
+
+text-overflow: ellipsis; 当对象内文本溢出时显示省略标记(...)
+```
+
+**注意**
+
+一定要首先强制一行内显示，再次和overflow 属性搭配使用
+
+![dot](CSS.assets/dot.png)
+
+```css
+// 先强制一行内显示文本
+white-space: nowrap;
+// 超出的部分隐藏
+overflow: hidden;
+// 文字用省略号替代超出的部分
+text-overflow: ellipsis;
+```
+
+### 7.4 CSS精灵技术Sprite
+
+#### 7.4.1 为什么使用精灵技术
+
+![sss](CSS.assets/sss.png)
+
+图所示为网页的请求原理图，当用户访问一个网站时，需要向服务器发送请求，网页上的每张图像都要经过一次请求才能展现给用户。然后一个网页中往往会应用很多小的背景图像作为修饰，当网页中的图像过多时，服务器就会频繁地接受和发送请求，这将大大降低页面的加载速度。
+
+> 总结：为了有效减少服务器接受和发送请求的次数，提高页面的加载速度
+
+#### 7.4.2 精灵技术讲解
+
+CSS精灵其实是将网页中的一些背景图像整合到一张大图中（精灵图），然而，各个网页元素通常只需要精灵图中不同位置的某个小图，要想精确定位到精灵图中的某个小图。
+
+![jds](CSS.assets/jds.png)
+
+这样，当用户访问该页面时，只需向服务发送一次请求，网页中的背景图像即可全部展示出来。
+
+我们需要使用css的
+
+- background-image
+- background-repeat
+- background-positon 属性进行背景定位
+- 其中最关键的是background-position
+
+#### 7.4.3 精灵技术使用的核心总结
+
+CSS精灵技术主要针对于背景图片，插入的图片img 是不需要这个技术的。
+
+1. 精确测量，每个小背景图片的大小和位置
+2. 给盒子指定小背景图片时，背景定位基本都是负值
+
+### 7.5 css三角形
+
+```css
+div {
+  width: 0;
+  height: 0;
+  line-height: 0;
+  font-size: 0;
+  border-top: 10px solid red;
+  border-right: 10px solid green;
+  border-bottom: 10px solid blue;
+  border-left: 10px solid #000;
+}
+```
+
+![arr](CSS.assets/arr.png)
+
+1. 我们用css 边框可以模拟三角效果
+2. 宽度高度为0
+3. 我们4个边框都要写，只保留需要的边框颜色，其余的不能省略，都改为transparent 透明就好了
+4. 为了照顾兼容性，低版本的浏览器，加上font-size: 0; line-height: 0;
+
+## 八、一般的骚操作
 
 ### Emmet 语法
 
@@ -1287,6 +1510,6 @@ Emmet 的前身是Zen coding，它使用缩写，来提高html/css 的编写速�
 3. 制作HTML结构，我们还是遵循，先有结构，后有样式的原则。结构永远最重要
 4. 然后开始运用盒子模型的原理，通过DIV+CSS布局来控制网页的各个模块 
 
-## 八、拓展阅读
+## 九、拓展阅读
 
 [emment语法](https://www.w3cplus.com/tools/emmet-cheat-sheet.html)
