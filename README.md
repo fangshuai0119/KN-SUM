@@ -7,6 +7,10 @@
 - [ ] Netty
 - [ ] MySQL
 - [ ] Spring
+- [ ] Spring Boot
+- [ ] Spring Security
+- [ ] Spring OAtuh2
+- [ ] Spring Cloud
 - [ ] Kafka
 - [ ] MyBatis
 - [ ] Python
@@ -17,4 +21,22 @@
 - [ ] Vue
 - [ ] React
 - [ ] webpack
+- [ ] Redis
+- [ ] Shell
+- [ ] Go
+- [ ] 设计模式
+- [ ] Sharding Jdbc
+- [ ] JavaScript
+- [ ] ES6
+- [ ] TypeScript
+- [ ] Node
+- [ ] Elasticsearch
+- [ ] HBase
+- [ ] Git
+- [ ] K8s
+- [ ] docker
+- [ ] Nginx
 - [ ] ...
+- [ ] ...
+
+想起来再加吧
