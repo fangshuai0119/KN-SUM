@@ -245,3 +245,224 @@ JVM中由堆、栈、方法区所组成，其中栈内存是给谁用的？其�
 - 线程优先级会提示(hint)调度器优先调度该线程，但它仅仅是一个提示，调度器可以忽略它
 - 如果CPU比较忙，那么优先级高的线程会获得更多的时间片，但是CPU闲时，优先级几乎没作用
 
+#### 2.4.4 join 方法
+
+在很多情况下，主线程创建并启动子线程，如果子线程中要进行大量的耗时运算，主线程将可能早于子线程结束。如果主线程需要知道子线程的执行结果时，就需要等待子线程执行结束。主线程可以sleep(n)，但这样的n时间不好确定，因为子线程的执行时间不确定，join()方法比较合适这个场景。
+
+#### 2.4.5 interrupt 方法详解
+
+Java 中的线程中断是一种线程间的协作模式，通过设置线程的中断标志并不能直接终止该线程的执行，而是被中断的线程根据中断状态自行处理。
+
+##### 2.4.5.1 打断sleep wait join 的线程
+
+**sleep, wait, join**的方法会让线程进入阻塞状态，**打断这种阻塞的线程会清空打断状态**
+
+以sleep 为例
+
+```java
+private static void test1() throws InterruptedException {
+	Thread t1 = new Thread(() -> {
+    sleep(1)
+  }, "t1");
+  t1.start();
+  
+  sleep(0.5);
+  t1.interrupt();
+  log.debug("打断状态：{}", t1.isInterrupted());
+}
+```
+
+输出
+
+```java
+java.lang.InterruptedException: sleep interrupted 
+  at java.lang.Thread.sleep(Native Method) 
+  at java.lang.Thread.sleep(Thread.java:340) 
+  at java.util.concurrent.TimeUnit.sleep(TimeUnit.java:386) 
+  at cn.itcast.n2.util.Sleeper.sleep(Sleeper.java:8) 
+  at cn.itcast.n4.TestInterrupt.lambda$test1$3(TestInterrupt.java:59) 
+  at java.lang.Thread.run(Thread.java:745) 
+21:18:10.374 [main] c.TestInterrupt - 打断状态: false
+```
+
+##### 2.4.5.2 打断正常运行的线程
+
+打断正常运行的线程，**不会清空打断状态**
+
+```java
+public static void test2() throws InterruptedException {
+        Thread t2 = new Thread(() -> {
+            while (true) {
+                Thread currentThread = Thread.currentThread();
+                boolean isInterrupted = currentThread.isInterrupted();
+                if (isInterrupted) {
+                    log.debug("打断状态: -> {}", isInterrupted);
+                    break;
+                }
+            }
+        }, "t2");
+        t2.start();
+        TimeUnit.SECONDS.sleep(1);
+        t2.interrupt();
+
+    }
+```
+
+```java
+// 输出
+22:31:42.205 c.TestInterrupt2 [t2] - 打断状态: -> true
+```
+
+##### 2.4.5.3 打断park 线程
+
+打断park 线程，不会清空打断状态
+
+```java
+public static void test3() throws InterruptedException {
+        Thread t3 = new Thread(() -> {
+            log.debug("park");
+            LockSupport.park();
+            log.debug("interrupted");
+            log.debug("打断状态: -> {}", Thread.currentThread().isInterrupted());
+        });
+
+        t3.start();
+        TimeUnit.SECONDS.sleep(1);
+        t3.interrupt();
+    }
+```
+
+```java
+// 输出
+22:36:12.136 c.TestInterrupt2 [Thread-0] - park
+22:36:13.136 c.TestInterrupt2 [Thread-0] - interrupted
+22:36:13.136 c.TestInterrupt2 [Thread-0] - 打断状态: -> true
+```
+
+如果打断标记已经是true, 则**park 会失效**
+
+```java
+public static void test4() throws InterruptedException {
+        Thread t4 = new Thread(() -> {
+            for (int i = 0; i < 3; i++) {
+                log.debug("park");
+                LockSupport.park();
+                log.debug("interrupted");
+                log.debug("打断状态: -> {}", Thread.currentThread().isInterrupted());
+            }
+        });
+
+        t4.start();
+        TimeUnit.SECONDS.sleep(1);
+        t4.interrupt();
+    }
+```
+
+```java
+// 输出
+22:42:47.610 c.TestInterrupt2 [Thread-0] - park
+22:42:48.608 c.TestInterrupt2 [Thread-0] - interrupted
+22:42:48.609 c.TestInterrupt2 [Thread-0] - 打断状态: -> true
+22:42:48.610 c.TestInterrupt2 [Thread-0] - park
+22:42:48.610 c.TestInterrupt2 [Thread-0] - interrupted
+22:42:48.610 c.TestInterrupt2 [Thread-0] - 打断状态: -> true
+22:42:48.610 c.TestInterrupt2 [Thread-0] - park
+22:42:48.610 c.TestInterrupt2 [Thread-0] - interrupted
+22:42:48.610 c.TestInterrupt2 [Thread-0] - 打断状态: -> true
+```
+
+> 提示
+>
+> 可以使用`Thread.interrupted()`清除打断状态
+
+### 2.5  不推荐的方法
+
+还有一些不推荐使用的方法，这些方法已过时，容易破坏同步代码块，造成线程死锁
+
+| 方法名    | static | 功能说明             |
+| --------- | ------ | -------------------- |
+| stop()    |        | 停止线程运行         |
+| suspend() |        | 挂起（暂停）线程运行 |
+| resume()  |        | 恢复线程运行         |
+
+### 2.6 主线程与守护线程
+
+默认情况下，Java进程需要等待所有线程都运行结束，才会结束。有一种特殊的线程叫做守护线程，只要其它非守护线程运行结束了，即使守护线程的代码没有执行完，也会强制结束。
+
+```java
+Thread t = new Thread(() -> {
+            while (true) {
+                log.debug("运行中");
+                try {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+        TimeUnit.MILLISECONDS.sleep(500);
+        log.debug("程序结束");
+```
+
+```java
+// 输出
+22:54:00.315 c.TestDaemon [Thread-0] - 运行中
+22:54:00.422 c.TestDaemon [Thread-0] - 运行中
+22:54:00.523 c.TestDaemon [Thread-0] - 运行中
+22:54:00.625 c.TestDaemon [Thread-0] - 运行中
+22:54:00.728 c.TestDaemon [Thread-0] - 运行中
+22:54:00.813 c.TestDaemon [main] - 程序结束
+
+Process finished with exit code 0
+```
+
+>**注意**
+>
+>- 垃圾回收器线程就是一种守护线程
+>- Tomcat 中的Acceptor 和 Poller 线程都是守护线程，所以Tomcat 接收到shutdown命令后，不会等待它们处理完当前请求
+
+### 2.8 线程的五种状态
+
+这是从**操作系统**层面来描述的
+
+![image-20200903230638666](java并发.assets/image-20200903230638666.png)
+
+- 【初始状态】仅是在语言层面创建了线程对象，还未与操作系统线程关联
+- 【可运行状态】（就绪状态）指该线程已经被创建（与操作系统线程关联），可以由CPU调度执行
+- 【运行状态】指获取了CPU时间片运行中的状态
+  - 当CPU时间片用完，会从【运行状态】转换为【可运行状态】，会导致线程的上下文切换
+- 【阻塞状态】
+  - 如果调用了阻塞API，如BIO读写文件，这时该线程实际不会用到CPU，会导致线程上下文切换，进入【阻塞状态】
+  - 等BIO操作完毕，会由操作系统唤醒阻塞的线程，转换到【可运行状态】
+  - 与【可运行状态】的区别是，对【阻塞状态】的线程来说只要它们一直不唤醒，调度器就一直不会考虑调度它们
+- 【终止状态】表示线程已经执行完毕，生命周期已经结束，不会再转换为其它状态
+
+### 2.9 六种状态
+
+这是从**Java API**层面来描述的
+
+根据Thread.State 枚举，分为六种状态
+
+![image-20200903231237586](java并发.assets/image-20200903231237586.png)
+
+- `New`线程刚被创建，但是还没有调用`start()`方法
+- `RUNNABLE`当调用了`start()`方法之后，注意，Java API层面的`RUNNABLE`状态涵盖了操作系统层面的【可运行状态】、【运行状态】和【阻塞状态】（由于BIO导致的线程阻塞，在Java 里无法区分，仍然认为是可运行）
+- `BLOCKED`、`WAITING`、`TIMED_WAITING`都是Java API层面对【阻塞状态】的细分
+- `TERMINATED` 当线程代码运行结束
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
