@@ -115,5 +115,190 @@ public class SparseArray {
 
 ```
 
+### 2.2 队列
 
+#### 2.2.1 队列介绍
+
+> - 队列是一个有序列表，可以用数组或是链表来实现
+> - 遵循先入先出的原则。即：先存入队列的数据，要先取出。后存入的要后取出
+
+#### 2.2.2 模拟数组队列 - 代码实现
+
+```java
+package com.fs.queue;
+
+import java.util.Scanner;
+
+/**
+ * @author fangshuai
+ * @version 1.0 2021/05/12
+ */
+public class ArrayQueueDemo {
+
+//    public static void main(String[] args) {
+//        ArrayQueue arrayQueue = new ArrayQueue(4);
+//        arrayQueue.addQueue(4);
+//        arrayQueue.addQueue(5);
+//        arrayQueue.addQueue(6);
+//        arrayQueue.addQueue(7);
+//        arrayQueue.show();
+//        System.out.println("从队列取数据: " + arrayQueue.getQueue());
+//        System.out.println("从队列取数据: " + arrayQueue.getQueue());
+//        System.out.println("从队列取数据: " + arrayQueue.getQueue());
+//        arrayQueue.show();
+//        arrayQueue.showHeadQueue();
+//        System.out.println("从队列取数据: " + arrayQueue.getQueue());
+//        arrayQueue.showHeadQueue();
+//        arrayQueue.show();
+//    }
+
+    public static void main(String[] args) {
+        ArrayQueue arrayQueue = new ArrayQueue(4);
+        // 接收用户输入
+        char key = ' ';
+        Scanner scanner = new Scanner(System.in);
+        boolean loop = true;
+        while (loop) {
+            System.out.println("s(show): 显示队列");
+            System.out.println("e(exit): 退出程序");
+            System.out.println("a(add): 添加数据到队列");
+            System.out.println("g(get): 从队列取出数据");
+            System.out.println("h(head): 显示队列头的数据");
+            key = scanner.next().charAt(0);
+            switch (key) {
+                case 's':
+                    arrayQueue.show();
+                    break;
+                case 'a':
+                    System.out.println("请输入一个数");
+                    int value = scanner.nextInt();
+                    arrayQueue.addQueue(value);
+                    break;
+                case 'e':
+                    scanner.close();
+                    loop = false;
+                case 'g':
+                    try {
+                        int head = arrayQueue.getQueue();
+                        System.out.println("取出的数据：" + head);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                    break;
+                case 'h':
+                    try {
+                        System.out.println("当前队列头数据: " + arrayQueue.showHeadQueue());
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+}
+
+/**
+ * 使用数组模拟队列 - 编写一个ArrayQueue类
+ */
+class ArrayQueue {
+
+    /**
+     * 表示数组的最大容量
+     */
+    private int maxSize;
+
+    /**
+     * 队列头
+     */
+    private int front;
+
+    /**
+     * 队列尾
+     */
+    private int rear;
+
+    /**
+     * 该数据用于存储数据，模拟队列
+     */
+    private int[] arr;
+
+    public ArrayQueue(int maxSize) {
+        this.maxSize = maxSize;
+        this.arr = new int[maxSize];
+        // 指向队列头部前一个位置
+        this.front = -1;
+        // 指向队列尾部的具体数据
+        this.rear = -1;
+    }
+
+    /**
+     * 判断队列是否已满
+     * @return
+     */
+    public boolean isFull() {
+        return this.rear == this.maxSize - 1;
+    }
+
+    /**
+     * 判断队列是否为空
+     * @return
+     */
+    public boolean isEmpty() {
+        return this.rear == this.front;
+    }
+
+    /**
+     * 添加数据
+     * @param n
+     */
+    public void addQueue(int n) {
+        if (isFull()) {
+            System.out.println("队列满，不能加入数据");
+            return;
+        }
+        this.rear += 1;
+        this.arr[this.rear] = n;
+    }
+
+    /**
+     * 数据出队
+     */
+    public int getQueue() {
+        if (isEmpty()) {
+            System.out.println("队列为空，不能获取数据");
+            throw new RuntimeException("队列为空，不能获取数据");
+        }
+        this.front += 1;
+        return this.arr[this.front];
+    }
+
+    /**
+     * 显示
+     */
+    public void show() {
+        if (isEmpty()) {
+            System.out.println("队列为空，没有数据");
+            return;
+        }
+        for (int i = 0; i < this.arr.length; i++) {
+            System.out.printf("arr[%d]=%d\n", i, this.arr[i]);
+        }
+    }
+
+    /**
+     * 显示头部数据
+     */
+    public int showHeadQueue() {
+        if (isEmpty()) {
+            System.out.println("队列为空，没有数据");
+            throw new RuntimeException("队列为空，不能获取数据");
+        }
+        System.out.println("当前头部数据:" + this.arr[this.front + 1]);
+        return this.arr[this.front + 1];
+    }
+}
+```
 
