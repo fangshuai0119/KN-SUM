@@ -738,3 +738,221 @@ class HeroNode {
 
 ```
 
+### 3.3 单链表面试题
+
+1. 求单链表中有效节点的个数
+
+```java
+public int size() {
+        if (head.next == null) {
+            return 0;
+        }
+        int size = 0;
+        HeroNode temp = head.next;
+        while (temp != null) {
+            size += 1;
+            temp = temp.next;
+        }
+        return size;
+    }
+```
+
+2. 查找单链表中倒数第k个结点
+
+```java
+/**
+     * 查找单链表中倒数第K个结点
+     * 1. 编写一个方法，接收head节点，同时接收一个index
+     * 2. index 表示是倒数第index 个节点
+     * 3. 先把链表从头到尾遍历，得到链表的总的长度size
+     * 4. 得到size后，我们从链表的第一个开始遍历(size - index)个，就可以得到
+     * 5. 如果找到了，则返回该节点，否则返回 null
+     * @param singleLinkedList
+     * @param index
+     * @return
+     */
+    public static HeroNode findIndexNode(SingleLinkedList singleLinkedList, int index) {
+        // 如果为空链表直接返回null
+        HeroNode head = singleLinkedList.getHead();
+        if (head.next == null) {
+            return null;
+        }
+
+        int size = singleLinkedList.size();
+        if (index <=0 || index > size) {
+            return null;
+        }
+        int nodeIndex = size - index;
+        HeroNode temp = head.next;
+        for (int i = 0; i < nodeIndex; i++) {
+            temp = temp.next;
+        }
+        return temp;
+    }
+```
+
+3. 单链表的反转
+
+![image-20210728225503466](Java数据结构与算法.assets/image-20210728225503466.png)
+
+```java
+/**
+     * 将单链表反转
+     * @param singleLinkedList
+     */
+    public static void reverse(SingleLinkedList singleLinkedList) {
+        HeroNode head = singleLinkedList.getHead();
+        // 如果当前链表为空，或者只有一个节点，无需反转
+        if (head.next == null || head.next.next == null) {
+            return;
+        }
+        HeroNode reverseNode = new HeroNode(0, "", "");
+        HeroNode tmp = head.next;
+        while (true) {
+            // 将原链表的头指向第一个节点的下一个节点
+            head.next = tmp.next;
+            tmp.next = reverseNode.next;
+            reverseNode.next = tmp;
+            // 第次获取排在最前的元素
+            if (head.next == null) {
+                break;
+            }
+            tmp = head.next;
+        }
+
+        head.next = reverseNode.next;
+    }
+```
+
+4. 从尾到头打印单链表
+
+![image-20210728232503574](Java数据结构与算法.assets/image-20210728232503574.png)
+
+```java
+/**
+     * 逆序打印
+     */
+    public void reverseShow() {
+        // 判断链表是否为空
+        if (head.next == null) {
+            System.out.println("链表为空");
+            return;
+        }
+
+        Stack<HeroNode> stack = new Stack<>();
+        HeroNode tmp = head.next;
+        while (true) {
+            stack.push(tmp);
+            tmp = tmp.next;
+            if (tmp == null) {
+                break;
+            }
+        }
+        while (stack.size() > 0) {
+            System.out.println(stack.pop());
+        }
+    }
+```
+
+5. 合并两个有序的单链表，合并之后的链表依然有序
+
+![image-20210728234455694](Java数据结构与算法.assets/image-20210728234455694.png)
+
+```java
+package com.fs.linkedlist;
+
+/**
+ * 合并两个有序的单链表, 合并之后的链表依然有序
+ * @author fangshuai
+ * @version 1.0 2021/07/28
+ */
+public class CombineLinkedListDemo {
+
+    public static void main(String[] args) {
+        SingleLinkedList s1 = getSingleLinkedList1();
+        SingleLinkedList s2 = getSingleLinkedList2();
+        SingleLinkedList result = combineLinkedList(s1, s2);
+        result.show();
+    }
+
+    private static SingleLinkedList combineLinkedList(SingleLinkedList s1, SingleLinkedList s2) {
+        HeroNode s1Head = s1.getHead();
+        HeroNode s2Head = s2.getHead();
+        if (s1Head.next == null) {
+            return s2;
+        }
+        if (s2Head.next == null) {
+            return s1;
+        }
+        SingleLinkedList result = new SingleLinkedList();
+        HeroNode s1Node = s1Head.next;
+        HeroNode s2Node = s2Head.next;
+        while (true) {
+            if (s1Node.no < s2Node.no) {
+                s1Head.next = s1Node.next;
+                s1Node.next = null;
+                result.add(s1Node);
+                s1Node = s1Head.next;
+            } else if (s1Node.no > s2Node.no) {
+                s2Head.next = s2Node.next;
+                s2Node.next = null;
+                result.add(s2Node);
+                s2Node = s2Head.next;
+            }
+            // 相等的情况下，只取一个，另一个值需要舍弃
+            else {
+                s1Node.next = null;
+                result.add(s1Node);
+                s1Node = s1Head.next;
+                s2Node = s2Head.next;
+            }
+            if (s1Node == null && s2Node != null) {
+                result.add(s2Node);
+                s2Node = null;
+            } else if (s1Node != null && s2Node == null) {
+                result.add(s1Node);
+                s1Node = null;
+            }
+            if (s1Node == null && s2Node == null) {
+                break;
+            }
+        }
+        return result;
+    }
+
+    private static SingleLinkedList getSingleLinkedList1() {
+        HeroNode hero1 = new HeroNode(1, "宋江", "及时雨");
+        HeroNode hero2 = new HeroNode(3, "卢俊义", "玉麒麟");
+        HeroNode hero3 = new HeroNode(6, "吴用", "智多星");
+        HeroNode hero4 = new HeroNode(9, "林冲", "豹子头");
+
+        SingleLinkedList singleLinkedList1 = new SingleLinkedList();
+        singleLinkedList1.addByOrder(hero1);
+        singleLinkedList1.addByOrder(hero2);
+        singleLinkedList1.addByOrder(hero3);
+        singleLinkedList1.addByOrder(hero4);
+        return singleLinkedList1;
+    }
+
+    private static SingleLinkedList getSingleLinkedList2() {
+        HeroNode hero1 = new HeroNode(4, "宋江", "及时雨");
+        HeroNode hero2 = new HeroNode(5, "卢俊义", "玉麒麟");
+        HeroNode hero3 = new HeroNode(7, "吴用", "智多星");
+        HeroNode hero4 = new HeroNode(10, "林冲", "豹子头");
+        HeroNode hero5 = new HeroNode(12, "林冲", "豹子头");
+        HeroNode hero6 = new HeroNode(14, "林冲", "豹子头");
+
+        SingleLinkedList singleLinkedList2 = new SingleLinkedList();
+        singleLinkedList2.addByOrder(hero1);
+        singleLinkedList2.addByOrder(hero2);
+        singleLinkedList2.addByOrder(hero3);
+        singleLinkedList2.addByOrder(hero4);
+        singleLinkedList2.addByOrder(hero5);
+        singleLinkedList2.addByOrder(hero6);
+        return singleLinkedList2;
+    }
+
+}
+
+```
+
