@@ -506,3 +506,235 @@ class CircleArray {
 
 ![image-20210727231458768](Java数据结构与算法.assets/image-20210727231458768.png)
 
+### 3.2 单链表的应用实例
+
+使用带head头的单向链表实现 - 水浒英雄排行榜管理完成对英雄人物的增删改查操作
+
+1. 第一种 方法在添加英雄时，直接添加到链表的尾部
+
+![image-20210728101934459](Java数据结构与算法.assets/image-20210728101934459.png)
+
+2. 第二种方式在添加英雄时，**根据排名**将英雄插入到指定位置（如果有这个排名，则添加失败）
+
+![image-20210728103631575](Java数据结构与算法.assets/image-20210728103631575.png)
+
+3. 修改节点功能
+
+- 先找到该节点
+- temp.name = newHeroNode.name
+
+4. 删除节点
+
+![image-20210728110047501](Java数据结构与算法.assets/image-20210728110047501.png)
+
+#### 3.2.1 代码实现
+
+```java
+package com.fs.linkedlist;
+
+/**
+ * @author fangshuai
+ * @version 1.0 2021/07/28
+ */
+public class SingleLinkedListDemo {
+
+    public static void main(String[] args) {
+        HeroNode hero1 = new HeroNode(1, "宋江", "及时雨");
+        HeroNode hero2 = new HeroNode(2, "卢俊义", "玉麒麟");
+        HeroNode hero3 = new HeroNode(3, "吴用", "智多星");
+        HeroNode hero4 = new HeroNode(4, "林冲", "豹子头");
+
+//        SingleLinkedList singleLinkedList = new SingleLinkedList();
+//        singleLinkedList.add(hero1);
+//        singleLinkedList.add(hero2);
+//        singleLinkedList.add(hero3);
+//        singleLinkedList.add(hero4);
+//        singleLinkedList.show();
+
+        SingleLinkedList singleLinkedList = new SingleLinkedList();
+        singleLinkedList.addByOrder(hero1);
+        singleLinkedList.addByOrder(hero3);
+        singleLinkedList.addByOrder(hero2);
+        singleLinkedList.addByOrder(hero4);
+        singleLinkedList.addByOrder(hero2);
+        singleLinkedList.show();
+
+        System.out.println("修改之后的情况");
+        HeroNode hero2UpdateNode = new HeroNode(2, "11", "22");
+        singleLinkedList.update(hero2UpdateNode);
+
+        System.out.println("删除后的情况");
+        singleLinkedList.delete(4);
+
+        singleLinkedList.show();
+    }
+
+}
+
+/**
+ * 单链表
+ */
+class SingleLinkedList {
+
+    /**
+     * 初始化一个头节点，头节点不动，不存放具体的数据
+     */
+    private HeroNode head = new HeroNode(0, "", "");
+
+    /**
+     * 添加节点到单向链表
+     * 1. 找到当前链表的最后节点
+     * 2. 将最后这个节点的next指向新的节点
+     * @param heroNode
+     */
+    public void add(HeroNode heroNode) {
+        HeroNode temp = head;
+        // 遍历链表，找到最后节点
+        while (true) {
+            if (temp.next == null) {
+                break;
+            }
+            temp = temp.next;
+        }
+        // 当退出while 循环时，temp 就指向了链表的最后
+        temp.next = heroNode;
+    }
+
+    /**
+     * 添加节点到单向链表
+     * 按序插入
+     * @param heroNode
+     */
+    public void addByOrder(HeroNode heroNode) {
+        // 因为是单链表，所以我们找的temp是位于添加位置的前一个节点
+        HeroNode temp = head;
+        // 标识添加的编号是否存在
+        boolean flag = false;
+        while (true) {
+            // 说明 temp 已经在链表最后
+            if (temp.next == null) {
+                break;
+            }
+            // 位置找到了
+            if (temp.next.no > heroNode.no) {
+                break;
+            }
+            // 说明将要添加的heroNode编号已经存在
+            else if (temp.next.no == heroNode.no) {
+                flag = true;
+                break;
+            }
+            temp = temp.next;
+        }
+        if (flag) {
+            System.out.printf("已存在相同编号节点, %d\n", heroNode.no);
+            return;
+        }
+        heroNode.next = temp.next;
+        temp.next = heroNode;
+    }
+
+    /**
+     * 修改节点的信息，根据no编号来修改，即no编号不能改
+     * 1. 根据newHeroNode的no来修改即可
+     * @param newHeroNode
+     */
+    public void update(HeroNode newHeroNode) {
+        // 判断是否空
+        if (head.next == null) {
+            System.out.println("链表为空");
+            return;
+        }
+        // 是否找到的标志
+        boolean flag = false;
+        // 找到需要修改的节点
+        HeroNode temp = head.next;
+        while (true) {
+            if (temp.no == newHeroNode.no) {
+                flag = true;
+                break;
+            }
+            temp = temp.next;
+        }
+        if (flag) {
+            temp.name = newHeroNode.name;
+            temp.nickName = newHeroNode.nickName;
+        } else {
+            System.out.printf("未找到编号为 %d 的节点", newHeroNode.no);
+        }
+    }
+
+    /**
+     * 删除节点
+     * @param no
+     */
+    public void delete(int no) {
+        HeroNode temp = head;
+        // 标识是否找到待删除节点
+        boolean flag = false;
+        while (true) {
+            if (temp.next == null) {
+                break;
+            }
+            if (temp.next.no == no) {
+                flag = true;
+                break;
+            }
+            temp = temp.next;
+        }
+        if (flag) {
+            temp.next = temp.next.next;
+        } else {
+            System.out.printf("未找到编号为 %d 的节点", no);
+        }
+    }
+
+    /**
+     * 显示链表
+     */
+    public void show() {
+        // 判断链表是否为空
+        if (head.next == null) {
+            System.out.println("链表为空");
+            return;
+        }
+
+        HeroNode temp = head.next;
+        while (true) {
+            System.out.println(temp);
+            temp = temp.next;
+            if (temp == null) {
+                break;
+            }
+        }
+    }
+
+}
+
+class HeroNode {
+    public int no;
+    public String name;
+    public String nickName;
+    /**
+     * 指向下一个节点
+     */
+    public HeroNode next;
+
+    public HeroNode(int no, String name, String nickName) {
+        this.no = no;
+        this.name = name;
+        this.nickName = nickName;
+    }
+
+    @Override
+    public String toString() {
+        return "HeroNode{" +
+                "no=" + no +
+                ", name='" + name + '\'' +
+                ", nickName='" + nickName + '\'' +
+                '}';
+    }
+}
+
+```
+
