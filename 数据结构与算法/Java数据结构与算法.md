@@ -956,3 +956,141 @@ public class CombineLinkedListDemo {
 
 ```
 
+### 3.4 双向链表应用实例
+
+#### 3.4.1 双向链表的操作分析与实现
+
+使用带head头的双向链表实现
+
+- 管理单向链表的缺点分析
+  - 单向链表，查找的方向只能是一个方向 ，而双向链表可以向前或者向后查找
+  - 单向链表不能自我删除，需要靠辅助节点，而双向链表，则可以自我删除
+
+![image-20210730000146931](Java数据结构与算法.assets/image-20210730000146931.png)
+
+#### 3.4.2 双向链表的代码实现
+
+```java
+package com.fs.linkedlist;
+
+/**
+ * @author fangshuai
+ * @version 1.0 2021/07/29
+ */
+public class DoubleLinkedList {
+
+    /**
+     * 初始化一个头节点，头节点不动，不存放具体的数据
+     */
+    private HeroNode2 head = new HeroNode2(0, "", "");
+
+    public HeroNode2 getHead() {
+        return head;
+    }
+
+    /**
+     * 添加节点到单向链表
+     * 1. 找到当前链表的最后节点
+     * 2. 将最后这个节点的next指向新的节点
+     * @param heroNode
+     */
+    public void add(HeroNode2 heroNode) {
+        HeroNode2 temp = head;
+        // 遍历链表，找到最后节点
+        while (true) {
+            if (temp.next == null) {
+                break;
+            }
+            temp = temp.next;
+        }
+        // 当退出while 循环时，temp 就指向了链表的最后
+        temp.next = heroNode;
+        heroNode.pre = temp;
+    }
+
+    /**
+     * 修改节点的信息，根据no编号来修改，即no编号不能改
+     * 1. 根据newHeroNode的no来修改即可
+     * @param newHeroNode
+     */
+    public void update(HeroNode2 newHeroNode) {
+        // 判断是否空
+        if (head.next == null) {
+            System.out.println("链表为空");
+            return;
+        }
+        // 是否找到的标志
+        boolean flag = false;
+        // 找到需要修改的节点
+        HeroNode2 temp = head.next;
+        while (true) {
+            if (temp.no == newHeroNode.no) {
+                flag = true;
+                break;
+            }
+            temp = temp.next;
+        }
+        if (flag) {
+            temp.name = newHeroNode.name;
+            temp.nickName = newHeroNode.nickName;
+        } else {
+            System.out.printf("未找到编号为 %d 的节点", newHeroNode.no);
+        }
+    }
+
+    /**
+     * 删除节点
+     * @param no
+     */
+    public void delete(int no) {
+        if (head.next == null) {
+            System.out.println("链表为空, 无法删除");
+            return;
+        }
+        HeroNode2 temp = head.next;
+        // 标识是否找到待删除节点
+        boolean flag = false;
+        while (true) {
+            if (temp == null) {
+                break;
+            }
+            if (temp.no == no) {
+                flag = true;
+                break;
+            }
+            temp = temp.next;
+        }
+        if (flag) {
+            temp.pre.next = temp.next;
+            // 判断不是最后一个节点
+            if (temp.next != null) {
+                temp.next.pre = temp.pre;
+            }
+        } else {
+            System.out.printf("未找到编号为 %d 的节点", no);
+        }
+    }
+
+    /**
+     * 显示链表
+     */
+    public void show() {
+        // 判断链表是否为空
+        if (head.next == null) {
+            System.out.println("链表为空");
+            return;
+        }
+
+        HeroNode2 temp = head.next;
+        while (true) {
+            System.out.println(temp);
+            temp = temp.next;
+            if (temp == null) {
+                break;
+            }
+        }
+    }
+}
+
+```
+
