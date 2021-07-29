@@ -1009,6 +1009,44 @@ public class DoubleLinkedList {
     }
 
     /**
+     * 添加节点到单向链表
+     * 按序插入
+     * @param heroNode
+     */
+    public void addByOrder(HeroNode2 heroNode) {
+        // 因为是单链表，所以我们找的temp是位于添加位置的前一个节点
+        HeroNode2 temp = head;
+        // 标识添加的编号是否存在
+        boolean flag = false;
+        while (true) {
+            // 说明 temp 已经在链表最后
+            if (temp.next == null) {
+                break;
+            }
+            // 位置找到了
+            if (temp.next.no > heroNode.no) {
+                break;
+            }
+            // 说明将要添加的heroNode编号已经存在
+            else if (temp.next.no == heroNode.no) {
+                flag = true;
+                break;
+            }
+            temp = temp.next;
+        }
+        if (flag) {
+            System.out.printf("已存在相同编号节点, %d\n", heroNode.no);
+            return;
+        }
+        if (temp.next != null) {
+            temp.next.pre = heroNode;
+        }
+        heroNode.next = temp.next;
+        heroNode.pre = temp;
+        temp.next = heroNode;
+    }
+
+    /**
      * 修改节点的信息，根据no编号来修改，即no编号不能改
      * 1. 根据newHeroNode的no来修改即可
      * @param newHeroNode
