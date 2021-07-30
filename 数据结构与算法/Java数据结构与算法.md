@@ -1132,3 +1132,184 @@ public class DoubleLinkedList {
 
 ```
 
+### 3.5 单向环形链表
+
+#### 3.5.1 单向环形链表应用场景
+
+Josephu (约瑟夫、约瑟夫环) 问题
+
+Josephu 问题为：设编号为1，2，… n的n个人围坐一圈，约定编号为k（1<=k<=n）的人从1开始报数，数到m 的那个人出列，它的下一位又从1开始报数，数到m的那个人又出列，依次类推，直到所有人出列为止，由此产生一个出队编号的序列。
+
+提示：用一个不带头结点的循环链表来处理Josephu 问题：先构成一个有n个结点的单循环链表，然后由k结点起从1开始计数，计到m时，对应结点从链表中删除，然后再从被删除结点的下一个结点又从1开始计数，直到最后一个结点从链表中删除算法结束。
+
+![img](https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg.jf258.com%2Fi%2F4a2072046347x3296363943b11.jpg&refer=http%3A%2F%2Fimg.jf258.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1630201922&t=c3c92f2d6b649b88c09d98dc2ceb2ac0)
+
+#### 3.5.2 单向环形链表介绍
+
+![image-20210730095503265](Java数据结构与算法.assets/image-20210730095503265.png)
+
+#### 3.5.3 约瑟夫问题
+
+示意图:
+
+![image-20210730095546756](Java数据结构与算法.assets/image-20210730095546756.png)
+
+#### 3.5.4 约瑟夫问题代码实现
+
+```java
+package com.fs.linkedlist;
+
+/**
+ * 约瑟夫环问题
+ * @author fangshuai
+ * @version 1.0 2021/07/30
+ */
+public class Joseph {
+
+    public static void main(String[] args) {
+        CircleSingleLinkedList circleSingleLinkedList = new CircleSingleLinkedList();
+        circleSingleLinkedList.addBoy(41);
+        circleSingleLinkedList.show();
+        circleSingleLinkedList.countBoy(1, 3, 41);
+
+    }
+
+}
+
+/**
+ * 单向环形链表
+ */
+class CircleSingleLinkedList {
+
+    /**
+     * 第一个节点
+     */
+    private Boy first;
+
+    /**
+     * 添加boy 节点，构建成一个环形的链表
+     * @param nums
+     */
+    public void addBoy(int nums) {
+        if (nums < 1) {
+            System.out.println("nums的值不正确");
+            return;
+        }
+
+        first = new Boy(1);
+        first.setNext(first);
+        // 辅助指针，帮助构建环形链表
+        Boy cur = first;
+        for (int i = 2; i <= nums; i++) {
+            Boy boy = new Boy(i);
+            cur.setNext(boy);
+            boy.setNext(first);
+            cur = boy;
+        }
+    }
+
+    public void show() {
+        if (first == null) {
+            System.out.println("当前链表为空");
+            return;
+        }
+
+        Boy cur = first;
+        while (true) {
+            System.out.println(cur);
+            if (cur.getNext() == first) {
+                break;
+            }
+            cur = cur.getNext();
+        }
+    }
+
+    /**
+     * 根据用户输入，计算小孩出圈的顺序
+     * @param startNo 表示从第几个小孩开始数数
+     * @param countNum 表示数几下
+     * @param nums 表示最初有多少小孩在圈中
+     */
+    public void countBoy(int startNo, int countNum, int nums) {
+        // 先对数据进行校验
+        if (first == null || startNo < 1 || startNo > nums || countNum < 1) {
+            System.out.println("参数输入有误");
+            return;
+        }
+        // 创建辅助指针，帮助完成boy 出圈
+        Boy helper = first;
+        // 让help 事先指向环形链表的最后一个节点
+        while (true) {
+            if (helper.getNext() == first) {
+                break;
+            }
+            helper = helper.getNext();
+        }
+        // boy 报数前，先让first和helper 移动 k - 1 次
+        for (int i = 0; i < startNo - 1; i++) {
+            first = first.getNext();
+            helper = helper.getNext();
+        }
+        // 当boy 报数时，让first 和 helper 指针同时移动m - 1 次，然后出圈
+        // 循环直到圈中只有一个节点
+        while (true) {
+            // 圈中只剩一个boy
+            if (first == helper) {
+                break;
+            }
+            // 让 first 和 helper 指针同时移动countNum - 1次
+            for (int i = 0; i < countNum - 1; i++) {
+                first = first.getNext();
+                helper = helper.getNext();
+            }
+            System.out.printf("boy = %d 出圈\n", first.getNo());
+            // 这时first 指向的节点，就是要出圈的boy 节点
+            first = first.getNext();
+            helper.setNext(first);
+        }
+        System.out.printf("boy = %d 出圈\n", first.getNo());
+    }
+
+}
+
+class Boy {
+
+    /**
+     * 编号
+     */
+    private int no;
+    /**
+     * 指向下一个节点
+     */
+    private Boy next;
+
+    public Boy(int no) {
+        this.no = no;
+    }
+
+    public int getNo() {
+        return no;
+    }
+
+    public void setNo(int no) {
+        this.no = no;
+    }
+
+    public Boy getNext() {
+        return next;
+    }
+
+    public void setNext(Boy next) {
+        this.next = next;
+    }
+
+    @Override
+    public String toString() {
+        return "Boy{" +
+                "no=" + no +
+                '}';
+    }
+}
+
+```
+
